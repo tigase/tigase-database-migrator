@@ -1,0 +1,3 @@
+Specification-Title: Tigase Database Migrator
+Specification-Vendor: tigase.net
+Specification-Version: 1.0.0
