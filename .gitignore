@@ -1,0 +1,7 @@
+logs/**
+jars/**
+logs/**
+libs/**
+.idea/
+*.iml
+/bin/
