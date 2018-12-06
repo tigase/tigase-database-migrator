@@ -1,0 +1,13 @@
+= Overview
+:author: Tigase Team <team@tigase.net>
+:numbered:
+:toc:
+:website: http://tigase.net
+:Date: 2018-12-05
+
+
+Tigase Database Migrator is component allowing migration of different types of data from various XMPP servers.
+Currently supports following servers and data:
+
+* `ejabberd`
+** User data (authentication, roster)

@@ -1,0 +1,11 @@
+= Tigase Database Migrator
+
+:author: Tigase Team <team@tigase.net>
+:numbered:
+:website: http://tigase.net
+:Date: 2018-12-05
+
+Welcome to Tigase Database Migrator guide
+
+include::text/Overview.asciidoc[leveloffset=+1]
+include::text/Usage.asciidoc[leveloffset=+1]
