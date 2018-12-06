@@ -25,6 +25,8 @@ import tigase.db.converter.Converter;
 import tigase.db.converter.Convertible;
 import tigase.db.converter.QueryExecutor;
 import tigase.kernel.beans.Inject;
+import tigase.vhosts.VHostItem;
+import tigase.vhosts.VHostManager;
 import tigase.xmpp.impl.roster.RosterAbstract;
 import tigase.xmpp.jid.BareJID;
 
@@ -55,6 +57,9 @@ public class UserCredentialsConverter
 	@Inject
 	UserRepository userRepository;
 	private UserDataQueries queries;
+
+	@Inject
+	VHostManager vHostManager;
 
 	public UserCredentialsConverter() {
 	}
@@ -100,6 +105,11 @@ public class UserCredentialsConverter
 	@Override
 	public boolean storeEntity(UserEntity entity) throws Exception {
 		authRepository.addUser(entity.getJid(), entity.getPassword());
+
+		if (!vHostManager.isLocalDomain(entity.getJid().getDomain())) {
+			final VHostItem vHostItem = new VHostItem(entity.getJid().getDomain());
+			vHostManager.getComponentRepository().addItem(vHostItem);
+		}
 
 		final String roster = entity.getRosterItems()
 				.stream()
