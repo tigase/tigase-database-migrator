@@ -34,10 +34,6 @@ public class QueryExecutor<E> {
 	public QueryExecutor() {
 	}
 
-	public void initialise(DataRepoPool dataRepoPool) {
-		this.dataRepoPool = dataRepoPool;
-	}
-
 	public List<E> executeQuery(String preparedStatementId, QueryFunction<PreparedStatement, List<E>> fun)
 			throws Exception {
 
@@ -49,6 +45,10 @@ public class QueryExecutor<E> {
 		final List<E> apply = fun.apply(preparedStatement);
 		dataRepoPool.addRepo(dataRepositoryFromPool);
 		return apply;
+	}
+
+	void initialise(DataRepoPool dataRepoPool) {
+		this.dataRepoPool = dataRepoPool;
 	}
 
 	@FunctionalInterface
