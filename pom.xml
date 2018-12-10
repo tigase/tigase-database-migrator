@@ -11,6 +11,14 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.build.timestamp.format>yyyy-MM-dd/HH:mm:ss</maven.build.timestamp.format>
+        <sign-keystore>/path/to/jks.keystore</sign-keystore>
+        <sign-alias>alias</sign-alias>
+        <sign-storepass>storepass</sign-storepass>
+        <sign-keypass>keypass</sign-keypass>
+        <sign-skip>true</sign-skip>
+        <verbose-log>false</verbose-log>
+        <tsa>${tsa-uri}</tsa>
     </properties>
 
     <licenses>
@@ -20,9 +28,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:https://…git</connection>
-        <developerConnection>scm:git:https://repository.….git</developerConnection>
-        <url>https://…/repository</url>
+        <connection>scm:git:https://git.tigase.tech/tigase-database-migrator</connection>
+        <developerConnection>scm:git:https://git.tigase.tech/tigase-database-migrator</developerConnection>
+        <url>https://tigase.tech/projects/tigase-database-migrator/repository</url>
     </scm>
     <organization>
         <name>Tigase</name>
