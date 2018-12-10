@@ -54,6 +54,7 @@ class UserDataQueries {
 		ejabberdSqlGeneric.put(UserCredentialsConverter.QUERY.rostergroups.name(), ROSTER_GROUPS);
 
 		ejabberdQueries.put(DataRepository.dbTypes.sqlserver.name(), ejabberdSqlGeneric);
+		ejabberdQueries.put(DataRepository.dbTypes.jtds.name(), ejabberdSqlGeneric);
 		ejabberdQueries.put(DataRepository.dbTypes.mysql.name(), ejabberdSqlGeneric);
 		ejabberdQueries.put(DataRepository.dbTypes.postgresql.name(), ejabberdSqlGeneric);
 

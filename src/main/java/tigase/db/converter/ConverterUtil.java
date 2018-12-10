@@ -44,26 +44,6 @@ public class ConverterUtil {
 
 	private static final Logger log = Logger.getLogger(ConverterUtil.class.getCanonicalName());
 
-	static ConfigBuilder getConfig(String uri, String defaultVirtualHost, int poolSize, ConfigTypeEnum defaultMode,
-								   List<String> components) {
-		ConfigBuilder builder = new ConfigBuilder().with("config-type", defaultMode.id().toLowerCase());
-		builder.with("default-virtual-host", defaultVirtualHost).with("debug", Arrays.asList("server"));
-
-		builder.withBean(ds -> ds.name("dataSource").withBean(def -> {
-			def.name("default").with("uri", uri);
-		}).with("schema-management", false).with("pool-size", poolSize));
-
-		final AbstractBeanConfigurator.BeanDefinition[] beanDefinitions = components.stream().map(component -> {
-			final AbstractBeanConfigurator.BeanDefinition beanDefinition = new AbstractBeanConfigurator.BeanDefinition();
-			beanDefinition.setBeanName(component);
-			beanDefinition.setActive(true);
-			return beanDefinition;
-		}).toArray(AbstractBeanConfigurator.BeanDefinition[]::new);
-		builder.with(beanDefinitions);
-
-		return builder;
-	}
-
 	static void initLogger() {
 		final String logsDirectory = "logs";
 		if (!Files.exists(Paths.get(logsDirectory))) {
