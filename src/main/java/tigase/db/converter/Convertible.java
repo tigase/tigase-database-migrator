@@ -78,4 +78,8 @@ public interface Convertible<T extends RowEntity> {
 	default Map<String, String> getAdditionalQueriesToInitialise() {
 		return Collections.emptyMap();
 	}
+
+	default Optional<Class> getParentBean() {
+		return Optional.empty();
+	}
 }

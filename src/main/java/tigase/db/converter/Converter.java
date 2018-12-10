@@ -19,17 +19,19 @@
 package tigase.db.converter;
 
 import tigase.component.DSLBeanConfigurator;
-import tigase.conf.ConfigBuilder;
+import tigase.conf.ConfigReader;
 import tigase.db.DataRepository;
 import tigase.db.DataSource;
 import tigase.db.TigaseDBException;
 import tigase.db.jdbc.DataRepositoryImpl;
 import tigase.kernel.KernelException;
-import tigase.kernel.beans.selector.ConfigTypeEnum;
+import tigase.kernel.beans.RegistrarBean;
+import tigase.kernel.core.BeanConfig;
 import tigase.kernel.core.Kernel;
 import tigase.util.ui.console.CommandlineParameter;
 import tigase.util.ui.console.ParameterParser;
 
+import java.io.File;
 import java.io.StringWriter;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,8 +46,6 @@ public class Converter {
 	final static String repositoryClassParameter = "repository-class";
 	final static String sourceUriParameter = "source-uri";
 	final static String serverTypeParameter = "server-type";
-	final static String destinationUriParameter = "destination-uri";
-	final static String componentsParameter = "components";
 	final static String virtualHostParameter = "virtual-host";
 	private static final Logger log = Logger.getLogger(Converter.class.getName());
 	private static final String defaultRepositoryClass = DataRepositoryImpl.class.getName();
@@ -62,9 +62,7 @@ public class Converter {
 
 	}
 
-	private final List<String> components;
 	private final ConverterProperties converterProperties;
-	private final String destinationURI;
 	private final String respositoryClassStr;
 	private final String sourceURI;
 	DataRepoPool dataRepoPool;
@@ -84,10 +82,6 @@ public class Converter {
 							.options(SERVER.strings)
 							.required(true)
 							.build());
-		options.add(new CommandlineParameter.Builder("D", destinationUriParameter).description(
-				"URI of the destination for the data: `jdbc:xxxx://<host>/<database>…`").required(true).build());
-		options.add(new CommandlineParameter.Builder("C", componentsParameter).description(
-				"Additional component beans names").required(false).build());
 
 		options.add(new CommandlineParameter.Builder("H", virtualHostParameter).description(
 				"Virtual-host / domain name used by installation")
@@ -132,12 +126,8 @@ public class Converter {
 
 	public Converter(Properties properties) {
 		this.sourceURI = properties.getProperty(sourceUriParameter);
-		this.destinationURI = properties.getProperty(destinationUriParameter);
 		this.respositoryClassStr = properties.getProperty(repositoryClassParameter);
-
-		final String[] split = properties.getProperty(componentsParameter, "").split(",");
-		this.components = Arrays.asList(split);
-
+		
 		converterProperties = new ConverterProperties();
 		final String virtualHost = properties.getProperty(virtualHostParameter);
 		converterProperties.setVHost(virtualHost);
@@ -150,7 +140,7 @@ public class Converter {
 		if (!initialised) {
 			throw new IllegalStateException("Converter hasn't been initialised yet");
 		}
-		convertibles.stream().map(kernel::getInstance).forEach(convertible -> {
+		registeredConvertibleBeans.stream().map(bean -> (Convertible) bean.getKernel().getInstance(bean.getClazz())).forEach(convertible -> {
 			final Optional<String> query = convertible.getMainQuery();
 
 			AtomicInteger failCount = new AtomicInteger();
@@ -204,12 +194,13 @@ public class Converter {
 	@SuppressWarnings("unchecked")
 	private void init() throws Exception {
 
-		ConfigBuilder builder = ConverterUtil.getConfig(destinationURI, converterProperties.getVHost(), 1,
-														ConfigTypeEnum.DefaultMode, components);
-		final HashMap config = builder.build();
+		final Map config = new ConfigReader().read(new File("etc/config.tdsl"));
+		config.put("schema-management", false);
+		config.put("pool-size", 1);
 
 		log.log(Level.CONFIG, "Using DSL configuration bootstrap: " + config);
 		kernel = ConverterUtil.prepareKernel(config);
+
 		final DSLBeanConfigurator instance = kernel.getInstance(DSLBeanConfigurator.class);
 		StringWriter writer = new StringWriter();
 		instance.dumpConfiguration(writer);
@@ -234,16 +225,21 @@ public class Converter {
 			throw new ClassCastException("Class must implement DataRepository interface");
 		}
 
-		kernel.registerBean("QueryExecutor").asClass(QueryExecutor.class).exec();
+		kernel.registerBean("QueryExecutor").asClass(QueryExecutor.class).exportable().exec();
 		final QueryExecutor queryExecutor = kernel.getInstance(QueryExecutor.class);
 		queryExecutor.initialise(dataRepoPool);
 
 		convertibles = tigase.util.ClassUtil.getClassesImplementing(Convertible.class);
 
 		log.log(Level.INFO, "Found converters: " + convertibles);
-		convertibles.forEach(beanClass -> kernel.registerBean(beanClass.getSimpleName()).asClass(beanClass).exec());
-		final Set<Convertible> allConvertibleInstances = convertibles.stream()
-				.map(cls -> kernel.getInstance(cls.getSimpleName()))
+
+		registerConvertibleBeans();
+
+		final Set<Convertible> allConvertibleInstances = registeredConvertibleBeans.stream()
+				.map(bean -> {
+					log.log(Level.FINE, "Retrieving bean " + bean.getBeanName() + " from " + bean.getKernel().getName());
+					return bean.getKernel().getInstance(bean.getBeanName());
+				})
 				.filter(obj -> Convertible.class.isAssignableFrom(obj.getClass()))
 				.map(convertible -> {
 					final Convertible convertibleInstance = (Convertible<RowEntity>) convertible;
@@ -267,12 +263,59 @@ public class Converter {
 		allConvertibleInstances.forEach(convertible -> {
 			log.log(Level.FINE, "Unregistering: " + convertible.getClass().getSimpleName());
 			convertibles.remove(convertible.getClass());
-			kernel.unregister(convertible.getClass().getSimpleName());
+			//kernel.unregister(convertible.getClass().getSimpleName());
+			List<BeanConfig> toUnregister = registeredConvertibleBeans.stream()
+					.filter(bean -> bean.getClazz().equals(convertible.getClass()))
+					.collect(Collectors.toList());
+
+			toUnregister.forEach(bean -> {
+				bean.getKernel().unregister(convertible.getClass().getSimpleName());
+			});
+			registeredConvertibleBeans.removeAll(toUnregister);
 		});
 
 		log.log(Level.INFO, "Compatible converters: " + convertibles);
 
 		this.initialised = true;
+	}
+
+	private List<BeanConfig> registeredConvertibleBeans = new ArrayList<>();
+
+	private void registerConvertibleBeans() {
+		convertibles.forEach(this::registerConvertibleBean);
+	}
+
+	private void registerConvertibleBean(Class<Convertible> convertible) {
+		try {
+			Optional<Class> parent = convertible.newInstance().getParentBean();
+			if (parent.isPresent()) {
+				List<BeanConfig> found = kernel.getDependencyManager().getBeanConfigs((Class<?>) parent.get(), null, null, true);
+				log.log(Level.FINEST, "Found parent beans for convertible " + convertible.getCanonicalName() + ": " + found);
+				if (found.size() > 1) {
+					log.log(Level.WARNING, "Too many parent beans for convertible " + convertible.getCanonicalName() + ": " + found + ", skipping conversion...");
+					return;
+				} else if (found.isEmpty()) {
+					log.log(Level.WARNING, "No parent beans for convertible " + convertible.getCanonicalName() + ": " + found + ", skipping conversion...");
+					return;
+				}
+
+				BeanConfig parentBean = found.get(0);
+				if (RegistrarBean.class.isAssignableFrom(parentBean.getClazz())) {
+					Object o = kernel.getInstance(parentBean.getClazz());
+					Kernel localKernel = kernel.getInstance(parentBean.getBeanName() + "#KERNEL");
+					localKernel.registerBean(convertible.getSimpleName()).asClass(convertible).exec();
+					this.registeredConvertibleBeans.add(localKernel.getDependencyManager().getBeanConfig(convertible.getSimpleName()));
+				} else {
+					parentBean.getKernel().registerBean(convertible.getSimpleName()).asClass(convertible).exec();
+					this.registeredConvertibleBeans.add(parentBean.getKernel().getDependencyManager().getBeanConfig(convertible.getSimpleName()));
+				}
+			} else {
+				kernel.registerBean(convertible.getSimpleName()).asClass(convertible).exec();
+				this.registeredConvertibleBeans.add(kernel.getDependencyManager().getBeanConfig(convertible.getSimpleName()));
+			}
+		} catch (Throwable ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 
 	public static class ConverterProperties {

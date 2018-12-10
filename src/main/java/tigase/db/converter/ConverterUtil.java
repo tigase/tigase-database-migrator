@@ -36,8 +36,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.*;
 
 public class ConverterUtil {
@@ -113,7 +113,7 @@ public class ConverterUtil {
 
 	}
 
-	static Kernel prepareKernel(HashMap config) {
+	static Kernel prepareKernel(Map config) {
 		Kernel kernel = new Kernel("root");
 		try {
 			if (XMPPServer.isOSGi()) {
@@ -138,10 +138,11 @@ public class ConverterUtil {
 
 		DSLBeanConfigurator configurator = kernel.getInstance(DSLBeanConfigurator.class);
 		configurator.setProperties(config);
-		configurator.registerBeans(null, null, config);
 		ModulesManagerImpl.getInstance().setBeanConfigurator(configurator);
-
 		kernel.registerBean("beanSelector").asInstance(new ServerBeanSelector()).exportable().exec();
+
+		configurator.registerBeans(null, null, config);
+
 		return kernel;
 	}
 
