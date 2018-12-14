@@ -56,10 +56,9 @@ public class UserCredentialsConverter
 	QueryExecutor queryExecutor;
 	@Inject
 	UserRepository userRepository;
-	private UserDataQueries queries;
-
 	@Inject
 	VHostManager vHostManager;
+	private UserDataQueries queries;
 
 	public UserCredentialsConverter() {
 	}
@@ -115,7 +114,9 @@ public class UserCredentialsConverter
 				.stream()
 				.map(userRosterItem -> userRosterItem.getRosterElement().getRosterElement().toString())
 				.collect(Collectors.joining());
-		userRepository.setData(entity.getJid(), null, RosterAbstract.ROSTER, roster);
+		if (roster != null && !roster.isEmpty()) {
+			userRepository.setData(entity.getJid(), null, RosterAbstract.ROSTER, roster);
+		}
 
 		return true;
 	}
@@ -127,8 +128,8 @@ public class UserCredentialsConverter
 
 	@SuppressWarnings("unchecked")
 	private void addRosterItems(UserEntity userEntity, BareJID jid) throws Exception {
-		final List<UserRosterItem> rosterItems = queryExecutor.executeQuery(QUERY.rosteritems.name(),
-																			getRosterItems(jid));
+		final List<UserRosterItem> rosterItems = (List<UserRosterItem>) queryExecutor.executeQuery(
+				QUERY.rosteritems.name(), getRosterItems(jid));
 		userEntity.addRosterItems(rosterItems);
 	}
 
@@ -172,8 +173,8 @@ public class UserCredentialsConverter
 				final String nick = resultSet.getString("nick");
 				final String subscription = resultSet.getString("subscription");
 
-				final List<String> groups = queryExecutor.executeQuery(QUERY.rostergroups.name(),
-																	   getRosterItemGroups(jid, conJid));
+				final List<String> groups = (List<String>) queryExecutor.executeQuery(QUERY.rostergroups.name(),
+																					  getRosterItemGroups(jid, conJid));
 				final UserRosterItem userRosterItem = new UserRosterItem(jid, conJid, nick, subscription, groups);
 				items.add(userRosterItem);
 			}

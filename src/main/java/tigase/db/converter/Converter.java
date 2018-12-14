@@ -19,10 +19,10 @@
 package tigase.db.converter;
 
 import tigase.component.DSLBeanConfigurator;
+import tigase.component.exceptions.RepositoryException;
 import tigase.conf.ConfigReader;
 import tigase.db.DataRepository;
 import tigase.db.DataSource;
-import tigase.db.TigaseDBException;
 import tigase.db.jdbc.DataRepositoryImpl;
 import tigase.kernel.KernelException;
 import tigase.kernel.beans.RegistrarBean;
@@ -69,6 +69,7 @@ public class Converter {
 	private Set<Class<Convertible>> convertibles;
 	private boolean initialised = false;
 	private Kernel kernel;
+	private List<BeanConfig> registeredConvertibleBeans = new ArrayList<>();
 
 	private static List<CommandlineParameter> getCommandlineOptions() {
 		List<CommandlineParameter> options = new ArrayList<>();
@@ -84,9 +85,7 @@ public class Converter {
 							.build());
 
 		options.add(new CommandlineParameter.Builder("H", virtualHostParameter).description(
-				"Virtual-host / domain name used by installation")
-							.required(true)
-							.build());
+				"Virtual-host / domain name used by installation").required(true).build());
 		return options;
 	}
 
@@ -127,7 +126,7 @@ public class Converter {
 	public Converter(Properties properties) {
 		this.sourceURI = properties.getProperty(sourceUriParameter);
 		this.respositoryClassStr = properties.getProperty(repositoryClassParameter);
-		
+
 		converterProperties = new ConverterProperties();
 		final String virtualHost = properties.getProperty(virtualHostParameter);
 		converterProperties.setVHost(virtualHost);
@@ -135,60 +134,65 @@ public class Converter {
 		converterProperties.setServerType(serverType);
 	}
 
+	private void log(RowEntity entity, boolean passed, AtomicInteger total, Exception e) {
+		log.log(Level.FINE, String.format("Storing %1$s: entity: %2$s %3$s", (passed ? "OK" : "FAILED"), entity,
+										  (e != null ? " (" + e.getMessage() + ")" : "")), e);
+		loggerFor.log(passed ? Level.INFO : Level.WARNING, "[{0}] {1} : {2}{3}",
+					  new String[]{String.valueOf(total.get()), entity.getID(), (passed ? "OK" : "FAILED"),
+								   (e != null ? " (" + e.getMessage() + ")" : "")});
+	}
+
 	private void convert() {
 
 		if (!initialised) {
 			throw new IllegalStateException("Converter hasn't been initialised yet");
 		}
-		registeredConvertibleBeans.stream().map(bean -> (Convertible) bean.getKernel().getInstance(bean.getClazz())).forEach(convertible -> {
-			final Optional<String> query = convertible.getMainQuery();
+		registeredConvertibleBeans.stream()
+				.map(bean -> (Convertible) bean.getKernel().getInstance(bean.getClazz()))
+				.forEach(convertible -> {
+					final Optional<String> query = convertible.getMainQuery();
 
-			AtomicInteger failCount = new AtomicInteger();
-			AtomicInteger totalCount = new AtomicInteger();
-			if (query.isPresent()) {
-				PreparedStatement preparedStatement = null;
-				ResultSet resultSet = null;
-				try {
-					dataRepoPool.initPreparedStatement(query.get(), query.get());
-					preparedStatement = dataRepoPool.getPreparedStatement(1, query.get());
-
-					resultSet = preparedStatement.executeQuery();
-
-					while (!resultSet.isClosed() && resultSet.next()) {
-						Optional<RowEntity> entity = Optional.empty();
-						totalCount.incrementAndGet();
+					AtomicInteger failCount = new AtomicInteger();
+					AtomicInteger totalCount = new AtomicInteger();
+					if (query.isPresent()) {
+						PreparedStatement preparedStatement = null;
+						ResultSet resultSet = null;
 						try {
-							entity = convertible.processResultSet(resultSet);
+							dataRepoPool.initPreparedStatement(query.get(), query.get());
+							preparedStatement = dataRepoPool.getPreparedStatement(1, query.get());
 
-							//TODO: add progress / count of rows
+							resultSet = preparedStatement.executeQuery();
 
-							boolean result;
-							if (entity.isPresent() && (result = convertible.storeEntity(entity.get()))) {
-								log.log(Level.FINEST, "Storing: entity" + entity.get());
-								loggerFor.log(Level.INFO, entity.get().getID() + ": OK");
-							} else {
-								failCount.incrementAndGet();
-								log.log(Level.FINE, entity.get() + " : FAILED");
-								loggerFor.log(Level.WARNING, entity.get().getID() + " : FAILED");
+							while (!resultSet.isClosed() && resultSet.next()) {
+								Optional<RowEntity> entity = Optional.empty();
+								totalCount.getAndIncrement();
+								try {
+									entity = convertible.processResultSet(resultSet);
+
+									//TODO: add progress / count of rows
+
+									boolean result;
+									if (entity.isPresent() && (result = convertible.storeEntity(entity.get()))) {
+										log(entity.get(), true, totalCount, null);
+									} else {
+										failCount.getAndIncrement();
+										log(entity.get(), false, totalCount, null);
+									}
+								} catch (RepositoryException e) {
+									failCount.getAndIncrement();
+									log(entity.get(), false, totalCount, e);
+								}
 							}
-						} catch (TigaseDBException e) {
-							failCount.incrementAndGet();
-							log.log(Level.FINE, entity + " : FAILED (" + e.getMessage() + ")", e);
-							loggerFor.log(Level.WARNING,
-										  (entity.isPresent() ? entity.get().getID() : "n/a") + " : FAILED (" +
-												  e.getMessage() + ")");
+						} catch (Exception e) {
+							log.log(Level.WARNING, "Error while converting data", e);
+						} finally {
+							dataRepoPool.release(preparedStatement, resultSet);
 						}
 					}
-				} catch (Exception e) {
-					log.log(Level.WARNING, "Error while converting data", e);
-				} finally {
-					dataRepoPool.release(preparedStatement, resultSet);
-				}
-			}
-			log.log(Level.INFO, "Conversion for {0} finished, {1} of {2} failed",
-					new String[]{convertible.getClass().getSimpleName(), String.valueOf(failCount.get()),
-								 String.valueOf(totalCount.get())});
-		});
+					log.log(Level.INFO, "Conversion for {0} finished, {1} of {2} failed",
+							new String[]{convertible.getClass().getSimpleName(), String.valueOf(failCount.get()),
+										 String.valueOf(totalCount.get())});
+				});
 	}
 
 	@SuppressWarnings("unchecked")
@@ -235,18 +239,14 @@ public class Converter {
 
 		registerConvertibleBeans();
 
-		final Set<Convertible> allConvertibleInstances = registeredConvertibleBeans.stream()
-				.map(bean -> {
-					log.log(Level.FINE, "Retrieving bean " + bean.getBeanName() + " from " + bean.getKernel().getName());
-					return bean.getKernel().getInstance(bean.getBeanName());
-				})
-				.filter(obj -> Convertible.class.isAssignableFrom(obj.getClass()))
-				.map(convertible -> {
-					final Convertible convertibleInstance = (Convertible<RowEntity>) convertible;
-					convertibleInstance.initialise(converterProperties);
-					return convertibleInstance;
-				})
-				.collect(Collectors.toSet());
+		final Set<Convertible> allConvertibleInstances = registeredConvertibleBeans.stream().map(bean -> {
+			log.log(Level.FINE, "Retrieving bean " + bean.getBeanName() + " from " + bean.getKernel().getName());
+			return bean.getKernel().getInstance(bean.getBeanName());
+		}).filter(obj -> Convertible.class.isAssignableFrom(obj.getClass())).map(convertible -> {
+			final Convertible convertibleInstance = (Convertible<RowEntity>) convertible;
+			convertibleInstance.initialise(converterProperties);
+			return convertibleInstance;
+		}).collect(Collectors.toSet());
 
 		final Set<Convertible> supportedConvertibles = allConvertibleInstances.stream()
 				.filter(convertible -> convertible.getMainQuery().isPresent())
@@ -279,8 +279,6 @@ public class Converter {
 		this.initialised = true;
 	}
 
-	private List<BeanConfig> registeredConvertibleBeans = new ArrayList<>();
-
 	private void registerConvertibleBeans() {
 		convertibles.forEach(this::registerConvertibleBean);
 	}
@@ -289,13 +287,19 @@ public class Converter {
 		try {
 			Optional<Class> parent = convertible.newInstance().getParentBean();
 			if (parent.isPresent()) {
-				List<BeanConfig> found = kernel.getDependencyManager().getBeanConfigs((Class<?>) parent.get(), null, null, true);
-				log.log(Level.FINEST, "Found parent beans for convertible " + convertible.getCanonicalName() + ": " + found);
+				List<BeanConfig> found = kernel.getDependencyManager()
+						.getBeanConfigs((Class<?>) parent.get(), null, null, true);
+				log.log(Level.FINEST,
+						"Found parent beans for convertible " + convertible.getCanonicalName() + ": " + found);
 				if (found.size() > 1) {
-					log.log(Level.WARNING, "Too many parent beans for convertible " + convertible.getCanonicalName() + ": " + found + ", skipping conversion...");
+					log.log(Level.WARNING,
+							"Too many parent beans for convertible " + convertible.getCanonicalName() + ": " + found +
+									", skipping conversion...");
 					return;
 				} else if (found.isEmpty()) {
-					log.log(Level.WARNING, "No parent beans for convertible " + convertible.getCanonicalName() + ": " + found + ", skipping conversion...");
+					log.log(Level.WARNING,
+							"No parent beans for convertible " + convertible.getCanonicalName() + ": " + found +
+									", skipping conversion...");
 					return;
 				}
 
@@ -304,14 +308,17 @@ public class Converter {
 					Object o = kernel.getInstance(parentBean.getClazz());
 					Kernel localKernel = kernel.getInstance(parentBean.getBeanName() + "#KERNEL");
 					localKernel.registerBean(convertible.getSimpleName()).asClass(convertible).exec();
-					this.registeredConvertibleBeans.add(localKernel.getDependencyManager().getBeanConfig(convertible.getSimpleName()));
+					this.registeredConvertibleBeans.add(
+							localKernel.getDependencyManager().getBeanConfig(convertible.getSimpleName()));
 				} else {
 					parentBean.getKernel().registerBean(convertible.getSimpleName()).asClass(convertible).exec();
-					this.registeredConvertibleBeans.add(parentBean.getKernel().getDependencyManager().getBeanConfig(convertible.getSimpleName()));
+					this.registeredConvertibleBeans.add(
+							parentBean.getKernel().getDependencyManager().getBeanConfig(convertible.getSimpleName()));
 				}
 			} else {
 				kernel.registerBean(convertible.getSimpleName()).asClass(convertible).exec();
-				this.registeredConvertibleBeans.add(kernel.getDependencyManager().getBeanConfig(convertible.getSimpleName()));
+				this.registeredConvertibleBeans.add(
+						kernel.getDependencyManager().getBeanConfig(convertible.getSimpleName()));
 			}
 		} catch (Throwable ex) {
 			throw new RuntimeException(ex);

@@ -25,16 +25,15 @@ import tigase.db.DataRepositoryPool;
 import tigase.db.TigaseDBException;
 
 import java.sql.PreparedStatement;
-import java.util.List;
 
 public class QueryExecutor<E> {
 
-	DataRepoPool dataRepoPool;
+	private DataRepoPool dataRepoPool;
 
 	public QueryExecutor() {
 	}
 
-	public List<E> executeQuery(String preparedStatementId, QueryFunction<PreparedStatement, List<E>> fun)
+	public E executeQuery(String preparedStatementId, QueryFunction<PreparedStatement, E> fun)
 			throws Exception {
 
 		final DataRepository dataRepositoryFromPool = dataRepoPool.takeRepoHandle(null);
@@ -42,7 +41,7 @@ public class QueryExecutor<E> {
 			throw new TigaseDBException("Wrong DataRepositoryImplementation");
 		}
 		final PreparedStatement preparedStatement = dataRepositoryFromPool.getPreparedStatement(0, preparedStatementId);
-		final List<E> apply = fun.apply(preparedStatement);
+		final E apply = fun.apply(preparedStatement);
 		dataRepoPool.addRepo(dataRepositoryFromPool);
 		return apply;
 	}
