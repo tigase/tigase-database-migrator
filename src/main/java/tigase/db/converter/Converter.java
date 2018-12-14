@@ -149,6 +149,7 @@ public class Converter {
 		}
 		registeredConvertibleBeans.stream()
 				.map(bean -> (Convertible) bean.getKernel().getInstance(bean.getClazz()))
+				.sorted(Comparator.comparing(convertible -> convertible.dependsOn().isPresent()))
 				.forEach(convertible -> {
 					final Optional<String> query = convertible.getMainQuery();
 

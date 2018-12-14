@@ -82,4 +82,8 @@ public interface Convertible<T extends RowEntity> {
 	default Optional<Class> getParentBean() {
 		return Optional.empty();
 	}
+
+	default Optional<Class<? extends Convertible>> dependsOn() {
+		return Optional.empty();
+	}
 }
