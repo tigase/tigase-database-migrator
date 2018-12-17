@@ -201,7 +201,7 @@ public class Converter {
 
 		final Map config = new ConfigReader().read(new File("etc/config.tdsl"));
 		config.put("schema-management", false);
-		config.put("pool-size", 1);
+		config.put("pool-size", 2);
 
 		log.log(Level.CONFIG, "Using DSL configuration bootstrap: " + config);
 		kernel = ConverterUtil.prepareKernel(config);
