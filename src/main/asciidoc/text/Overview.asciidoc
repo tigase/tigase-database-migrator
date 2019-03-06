@@ -11,3 +11,5 @@ Currently supports following servers and data:
 
 * `ejabberd`
 ** User data (authentication, roster)
+** MUC (multi user chat)
+** PubSub
