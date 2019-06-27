@@ -15,6 +15,8 @@ Currently supports following servers and data:
 
 # Usage
 
+Complete guide available in [documentation](https://docs.tigase.net/tigase-database-migrator/1.0.0/Tigase_Database_Migrator_Guide/html/)
+
 Migrator is a command-line utility. Main class: `tigase.db.converter.Converter`, if executed without any parameters will display help with all parameters explained:
 
 ```
@@ -43,8 +45,6 @@ When looking for support, please first search for answers to your question in th
 
 If you didn't find an answer in the resources above, feel free to submit your question to either our 
 [community portal](https://help.tigase.net/portal/community) or open a [support ticket](https://help.tigase.net/portal/newticket).
-
-https://docs.tigase.net/tigase-database-migrator/1.0.0/Tigase_Database_Migrator_Guide/html/
 
 # Downloads
 
