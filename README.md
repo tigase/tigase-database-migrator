@@ -9,9 +9,9 @@ Tigase Database Migrator is component allowing migration of different types of d
 Currently supports following servers and data:
 
 * `ejabberd`
-** User data (authentication, roster)
-** MUC (multi user chat)
-** PubSub
+  * User data (authentication, roster)
+  * MUC (multi user chat)
+  * PubSub
 
 # Usage
 
