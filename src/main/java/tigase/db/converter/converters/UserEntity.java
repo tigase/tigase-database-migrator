@@ -1,4 +1,4 @@
-/**
+/*
  * Tigase Database Migrator - Component responsible for migrating data from other XMPP servers
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
