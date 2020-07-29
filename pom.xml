@@ -11,6 +11,7 @@
 
     <properties>
         <license.inlineHeader>${inlineHeader_agpl3}</license.inlineHeader>
+        <documentation_phases.all_converters>generate-resources</documentation_phases.all_converters>
     </properties>
 
     <artifactId>tigase-database-migrator</artifactId>
