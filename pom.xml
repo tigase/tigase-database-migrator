@@ -16,7 +16,7 @@
     </properties>
 
     <artifactId>tigase-database-migrator</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
     <inceptionYear>2018</inceptionYear>
@@ -35,7 +35,7 @@
         <connection>scm:git:${scm_repo_base}/tigase-database-migrator.git</connection>
         <developerConnection>scm:git:${scm_repo_base}/tigase-database-migrator.git</developerConnection>
         <url>${scm_repo_base}/tigase-database-migrator.git</url>
-        <tag>tigase-database-migrator-1.1.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <build>
