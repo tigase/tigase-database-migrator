@@ -6,6 +6,6 @@ libs/**
 *.iml
 /bin/
 /target/**
-src/main/restructured/locale/pl/LC_MESSAGES/*.mo
+src/main/restructured/locale/*/LC_MESSAGES/*.mo
 src/main/restructured/_build/
 
