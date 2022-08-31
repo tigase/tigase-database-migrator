@@ -3,50 +3,55 @@
 # This file is distributed under the same license as the TigaseDoc package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: TigaseDoc \n"
+"Project-Id-Version: TigaseDoc\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-08-31 05:15-0700\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2022-08-31 18:59+0000\n"
+"Last-Translator: Qian Luo <qian.luo@tigase.net>\n"
+"Language-Team: Chinese (Simplified) <http://translate.tigase.net/projects/"
+"tigase-database-migrator-documentation/"
+"tigase-database-migrator-documentation/zh_Hans/>\n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 4.11.2\n"
 "Generated-By: Babel 2.8.0\n"
 
 #: ../../Database_migrator.rst:2
 msgid "Overview"
-msgstr ""
+msgstr "概述"
 
 #: ../../Database_migrator.rst:4
 msgid ""
 "Tigase Database Migrator is component allowing migration of different "
 "types of data from various XMPP servers. Currently supports following "
 "servers and data:"
-msgstr ""
+msgstr "Tigase Database Migrator 是允许从各种 XMPP "
+"服务器迁移不同类型数据的组件。目前支持以下服务器和数据："
 
 #: ../../Database_migrator.rst:6
 msgid "``ejabberd``"
-msgstr ""
+msgstr "``ejabberd``"
 
 #: ../../Database_migrator.rst:8
 msgid "User data (authentication, roster)"
-msgstr ""
+msgstr "用户数据（身份验证、花名册）"
 
 #: ../../Database_migrator.rst:10
 msgid "MUC (multi user chat)"
-msgstr ""
+msgstr "MUC（多用户聊天）"
 
 #: ../../Database_migrator.rst:12
 msgid "PubSub"
-msgstr ""
+msgstr "PubSub"
 
 #: ../../Database_migrator.rst:15
 msgid "Usage"
-msgstr ""
+msgstr "用法"
 
 #: ../../Database_migrator.rst:17
 msgid ""
@@ -54,20 +59,22 @@ msgid ""
 "``tigase.db.converter.Converter``, if executed without any parameters "
 "will display help with all parameters explained:"
 msgstr ""
+"Migrator 是一个命令行实用程序。主类： ``tigase.db.converter."
+"Converter``，如果不带任何参数执行将显示所有参数的帮助说明："
 
 #: ../../Database_migrator.rst:24
 msgid "Converter options"
-msgstr ""
+msgstr "转换器选项"
 
 #: ../../Database_migrator.rst:26
 msgid "Following options are supported"
-msgstr ""
+msgstr "支持以下选项"
 
 #: ../../Database_migrator.rst:28
 msgid ""
 "``-I`` or ``--interactive`` (**optional**) - Enable interactive mode, "
 "which will result in prompting for missing parameters"
-msgstr ""
+msgstr "``-I`` 或 ``--interactive`` （**可选**） - 启用交互模式，这将导致提示缺少参数"
 
 #: ../../Database_migrator.rst:30
 msgid ""
@@ -76,30 +83,40 @@ msgid ""
 " implement tigase.db.DataSource (default: "
 "``tigase.db.jdbc.DataRepositoryImpl``)"
 msgstr ""
+"``-R value`` 或 ``--repository-class=value`` - 允许指定用于从源读取数据的 "
+"``DataRepository`` 实现；必须实现 tigase.db.DataSource（默认值：``tigase.db."
+"jdbc.DataRepositoryImpl``）"
 
 #: ../../Database_migrator.rst:32
 msgid ""
 "``-S value`` or ``--source-uri=value`` - URI of the source do the data: "
 "``jdbc:xxxx://<host>/<database>…``"
 msgstr ""
+"``-S value`` 或 ``--source-uri=value`` - 执行数据的源 "
+"URI：``jdbc:xxxx://<host>/<database>...``"
 
 #: ../../Database_migrator.rst:34
 msgid ""
 "``-T value`` or ``--server-type=value`` - type of the server from which "
 "import will be performed, possible values: [ejabberd, ejabberd_new]"
 msgstr ""
+"``-T value`` 或 ``--server-type=value`` - "
+"将执行导入的服务器的类型，可能的值：[ejabberd, ejabberd_new]"
 
 #: ../../Database_migrator.rst:36
 msgid ""
 "``-D value`` or ``--destination-uri=value`` - URI of the destination for "
 "the data: ``jdbc:xxxx://<host>/<database>…``"
 msgstr ""
+"``-D value`` 或 ``--destination-uri=value`` - 数据目的地的 "
+"URI：``jdbc:xxxx://<host>/<database>...``"
 
 #: ../../Database_migrator.rst:38
 msgid ""
 "``-C value`` or ``--components=value`` (**optional**) - additional "
 "component beans names that should be activated"
-msgstr ""
+msgstr "``-C value`` 或 ``--components=value`` （**可选**） - 应该激活的附加组件 "
+"bean 名称"
 
 #: ../../Database_migrator.rst:40
 msgid ""
@@ -107,8 +124,9 @@ msgid ""
 " / domain name used by source installation (for example in case of old "
 "ejabberd installations)"
 msgstr ""
+"``-H value`` 或 ``--virtual-host=value`` - "
+"允许指定源安装使用的虚拟主机/域名（例如在旧的 ejabberd 安装的情况下）"
 
 #: ../../index.rst:4
 msgid "Tigase Database Migrator - Version 1.2.0"
-msgstr ""
-
+msgstr "Tigase 数据库迁移器 - 版本 1.2.0"
